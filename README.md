@@ -6,6 +6,31 @@ This repository implements a `MAP` macro, which can be used as follows:
 #define PRINT(a) printf(#a": %d", a); /* An example macro */
 MAP(PRINT, a, b, c) /* Apply PRINT to a, b, and c */
 ```
+or for ```c enum ``` stringification, e.g.,
+```c
+#define item(x,y) y::x
+#define str(x) #x
+#define ENUM(myEnum,...)  \
+   enum class myEnum : unsigned int { __VA_ARGS__};\
+   std::vector<std::string> myEnum##_str = { MAP_LIST(str, __VA_ARGS__)};\
+   std::vector<enumTypeName> myEnum##_keys = { MAP_LIST_UD(item,myEnum, __VA_ARGS__ )};
+
+ENUM(myEnum,Item1, Item2,Item3 etc etc) /* saves a lot of typing and keeps everything in sync */
+```
+Just for fun, map enum to vector of strings (example of MAP_LIST_UD_I usage):
+```c
+#define item(x,y) y::x
+#define item_to_pair(x,y,i) {x, y[i]}
+#define MAP_STRINGZ(myMap, myStrings, myEnum,...) \  // dangerous: does not check ranges
+   enum class myEnum : unsigned int { __VA_ARGS__};\ // i.e., if enum has more entries than string list 
+   std::map<myEnum,std::string> myMap = {\           // you are in trouble at run time
+                              MAP_LIST_UD_I(item_to_pair,myStrings,\
+                                MAP_LIST_UD(item,myEnum, __VA_ARGS__ ))\
+                                };
+std::vector<std::string> myStrings = { some strings };
+....
+MAP_STRINGZ(myMap, myStrings, myEnum,Item1, Item2,Item3 etc etc) 
+```
 
 This macro came about in answer to a [Stack Overflow question.](http://stackoverflow.com/questions/6707148/foreach-macro-on-macros-arguments/13459454#13459454).
 The original answer can be found in the [`stackoverflow` branch](https://github.com/swansontec/map-macro/tree/stackoverflow).
